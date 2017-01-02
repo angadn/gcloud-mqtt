@@ -16,5 +16,9 @@
     "mqtt"
   ],
   "author": "angadn",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@google-cloud/pubsub": "^0.7.0",
+    "mosca": "^2.2.0"
+  }
 }
