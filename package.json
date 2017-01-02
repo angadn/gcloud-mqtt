@@ -1,0 +1,20 @@
+{
+  "name": "gcloud-mqtt",
+  "version": "0.1.0",
+  "description": "Scale real-time push-messaging using Dockerized MQTT, backed by Google Cloud's PubSub service!",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "gcloud",
+    "google",
+    "google",
+    "cloud",
+    "cloud",
+    "pubsub",
+    "mqtt"
+  ],
+  "author": "angadn",
+  "license": "ISC"
+}
