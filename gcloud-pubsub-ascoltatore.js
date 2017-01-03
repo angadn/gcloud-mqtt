@@ -1,42 +1,89 @@
-var Ascoltatore = require("ascoltatori").AbstractAscoltatore;
-var pubsub = require("@google-cloud/pubsub")(
-  require("./config").gcloud
-);
+var Ascoltatori = require("ascoltatori");
+var defer = Ascoltatori.util.defer;
 
-Ascoltatore.prototype.subscribe = function(topic, callback, done) {
-  pubsub.topic(topic).subscribe(function(err, subscription) {
-    if (err) {
-      console.error(err);
-    } else {
-      subscription.on("message", callback);
-      subscription.on("error", function(error) {
-        console.error(
-          "Error", "'" + error + "''", " subscribing to", subscription
-        );
+function Ascoltatore(gcloudConfig) {
+  this.pubsub = require("@google-cloud/pubsub")(gcloudConfig);
+  this.subscriptions = {};
+}
+
+// Extend AbstractAscoltatore!
+Ascoltatore.prototype = Object.create(
+  Ascoltatori.AbstractAscoltatore.prototype
+);
+Ascoltatore.prototype.constructor = Ascoltatore;
+
+Ascoltatore.prototype.transformResourceName = function(topic) {
+  return "a" + topic.replace(/[^a-zA-Z0-9\-_\.\~\+\%]/g, "-");
+};
+
+Ascoltatore.prototype.subscribe = function(topicName, callback, done) {
+  var self = this;
+  this.pubsub.topic(this.transformResourceName(topicName)).get(
+    {autoCreate: true}, function(err, topic, apiResponse) {
+      topic.subscribe(function(err, subscription) {
+        if (subscription) {
+          self.subscriptions[topicName] = self.subscriptions[topicName] || [];
+          self.subscriptions[topicName].push(subscription);
+
+          subscription.on("message", function(message) {
+            // Rework into UTF-8
+            var arr = message.data.value.data, str = "";
+            for (var i = 0; i < arr.length; i++) {
+              str += "%" + ("0" + arr[i].toString(16)).slice(-2);
+            }
+            str = decodeURIComponent(str);
+
+            callback(
+              message.data.topic,
+              str,
+              message.data.options
+            );
+            console.log("Received message", str, "for topic", message.data.topic);
+          });
+          subscription.on("error", function(error) {
+            console.error(
+              "Error", "'" + error + "''", " subscribing to", subscription
+            );
+          });
+
+          defer(done);
+          console.log("Subscribed to", topicName);
+        } else {
+          console.error("Failed to create Subscription!");
+        }
       });
     }
-
-    done();
-  });
-};
-
-Ascoltatore.prototype.publish = function(topic, payload, options, done) {
-  pubsub.topic(topic).publish(payload, function(error) {
-    if (error) {
-      console.error(
-        "Error ", "'" + error + "'", " publishing to", topic
-      );
-    }
-
-    done();
-  });
-};
-
-Ascoltatore.prototype.unsubscribe = function(topic, callback, done) {
-  console.warn(
-    "GcloudPubsubAscoltatore#unsubscribe is unimplemented since Mosca doesn't",
-    "seem to use it"
   );
+};
+
+Ascoltatore.prototype.publish = function(topicName, payload, options, done) {
+  this.pubsub.topic(this.transformResourceName(topicName)).get(
+    {autoCreate: true}, function(err, topic, apiResponse) {
+      topic.publish({
+        value: payload,
+        topic: topicName,
+        options: options
+      }, function(error) {
+        if (error) {
+          console.error(
+            "Error ", "'" + error + "'", " publishing to", topic
+          );
+        }
+
+        defer(done);
+        console.log("Published to", topicName);
+      });
+    }
+  );
+};
+
+Ascoltatore.prototype.unsubscribe = function(topicName, callback, done) {
+  this.subscriptions[topicName].forEach(function(item) {
+    console.log("Deleting subscription", item.name);
+    item.delete(function() {
+      defer(done);
+    });
+  });
 };
 
 Ascoltatore.prototype.close = function(done) {
@@ -46,4 +93,4 @@ Ascoltatore.prototype.close = function(done) {
   );
 };
 
-module.exports.GcloudPubsubAscoltatore = Ascoltatore;
+module.exports = Ascoltatore;
