@@ -7,11 +7,15 @@ moscaConfig.backend = GcloudPubsubAscoltatore;
 var server = new mosca.Server(moscaConfig);
 
 server.on("clientConnected", function(client) {
-  console.log("Client connected with ID", client.id);
+  if (client) {
+    console.log("Client connected with ID", client.id);
+  }
 });
 
 server.on("published", function(packet, client) {
-  console.log("Published", packet.payload, " for client ID", client.id);
+  if (client) {
+    console.log("Published", packet.payload, " for client ID", client.id);
+  }
 });
 
 server.on("ready", function() {
