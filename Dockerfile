@@ -13,6 +13,7 @@ RUN npm install
 
 # Bundle app sources
 COPY . /usr/src/gcloud-mqtt
+COPY gcloud.json /usr/src/gcloud-mqtt/gcloud.json
 
 EXPOSE 1883
 EXPOSE 9001
