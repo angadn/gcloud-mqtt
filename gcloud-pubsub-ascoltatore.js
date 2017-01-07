@@ -38,7 +38,15 @@ Ascoltatore.prototype.subscribe = function(topicName, callback, done) {
               str,
               message.data.options
             );
-            console.log("Received message", str, "for topic", message.data.topic);
+
+            console.log(
+              "Received message", str,
+              "for topic", message.data.topic,
+              "and subscription", subscription.name
+            );
+            message.ack(function() {
+              console.log("Acknowledged message ID", message.id);
+            });
           });
           subscription.on("error", function(error) {
             console.error(
