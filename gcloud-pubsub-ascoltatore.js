@@ -22,8 +22,8 @@ Ascoltatore.prototype.subscribe = function(topicName, callback, done) {
     {autoCreate: true}, function(err, topic, apiResponse) {
       topic.subscribe(function(err, subscription) {
         if (subscription) {
-          self.subscriptions[topicName] = self.subscriptions[topicName] || [];
-          self.subscriptions[topicName].push(subscription);
+          (self.subscriptions[topicName] = self.subscriptions[topicName] || [])
+            .push(subscription);
 
           subscription.on("message", function(message) {
             // Rework into UTF-8
